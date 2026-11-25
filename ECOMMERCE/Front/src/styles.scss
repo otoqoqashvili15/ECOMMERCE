@@ -1,0 +1,8 @@
+/* You can add global styles to this file, and also import other style files */
+:root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+* { box-sizing: border-box; }
+html { min-width: 320px; scroll-behavior: smooth; background: #faf9f6; }
+body { min-width: 320px; min-height: 100vh; margin: 0; background: #faf9f6; }
+button, input, select, textarea { font: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #778a73; outline-offset: 3px; }
+::selection { background: #dbe3d7; color: #2e4434; }

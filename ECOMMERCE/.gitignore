@@ -1,0 +1,11 @@
+.env
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.angular/
+**/.vs/
+**/*.user
+**/*.suo
+.tools/
+.tmp/

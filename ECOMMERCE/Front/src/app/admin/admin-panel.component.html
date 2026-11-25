@@ -1,0 +1,96 @@
+<section class="admin-page">
+  <div class="admin-heading">
+    <div>
+      <p class="eyebrow">STORE OPERATIONS</p>
+      <h1>Good morning, manager.</h1>
+      <p class="lede">Keep the catalog tidy, stock healthy, and every order moving.</p>
+    </div>
+    <button class="quiet-button" type="button" (click)="refreshDashboard()">↻ Refresh</button>
+  </div>
+
+  <div class="stat-grid">
+    <article class="stat-card"><span>Active products</span><strong>{{ summary()?.productCount ?? '—' }}</strong><small>In the live catalog</small></article>
+    <article class="stat-card"><span>Orders</span><strong>{{ summary()?.orderCount ?? '—' }}</strong><small>All time</small></article>
+    <article class="stat-card"><span>Low stock</span><strong class="warn-number">{{ summary()?.lowStockCount ?? '—' }}</strong><small>At or below minimum</small></article>
+    <article class="stat-card"><span>Tracked sales</span><strong>{{ summary()?.salesTotal ?? 0 | currency:'USD':'symbol':'1.0-0' }}</strong><small>Paid and fulfilled orders</small></article>
+  </div>
+
+  <div class="admin-grid">
+    <section class="panel product-editor">
+      <div class="panel-title">
+        <div><p class="eyebrow">CATALOG</p><h2>{{ editingId() ? 'Edit product' : 'Add a product' }}</h2></div>
+        @if (editingId()) { <button class="text-button" type="button" (click)="resetProductForm()">Cancel edit</button> }
+      </div>
+      <form (ngSubmit)="saveProduct()">
+        <label>Product name<input name="productName" [(ngModel)]="name" maxlength="180" required /></label>
+        <div class="form-row">
+          <label>Brand<input name="brand" [(ngModel)]="brand" /></label>
+          <label>Category<select name="categoryId" [(ngModel)]="categoryId" required>
+            <option [ngValue]="null" disabled>Choose a category</option>
+            @for (category of categories(); track category.id) { <option [ngValue]="category.id">{{ category.name }}</option> }
+          </select></label>
+        </div>
+        <label>Description<textarea name="description" [(ngModel)]="description" rows="3"></textarea></label>
+        <div class="form-row three">
+          <label>Price<input name="price" type="number" min="0" step="0.01" [(ngModel)]="price" required /></label>
+          <label>Discount %<input name="discountPercent" type="number" min="0" max="100" [(ngModel)]="discountPercent" /></label>
+          <label>Stock<input name="stock" type="number" min="0" [(ngModel)]="stock" /></label>
+        </div>
+        <div class="form-row">
+          <label>Low-stock alert at<input name="minimumStock" type="number" min="0" [(ngModel)]="minimumStock" /></label>
+          <label>Image URL<input name="imageUrl" type="url" [(ngModel)]="imageUrl" placeholder="https://…" /></label>
+        </div>
+        @if (formError()) { <p class="form-error">{{ formError() }}</p> }
+        <button class="primary-button" type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : editingId() ? 'Save changes' : 'Add to catalog' }}</button>
+      </form>
+    </section>
+
+    <section class="panel category-editor">
+      <div class="panel-title"><div><p class="eyebrow">ORGANIZATION</p><h2>New category</h2></div></div>
+      <form (ngSubmit)="addCategory()">
+        <label>Category name<input name="categoryName" [(ngModel)]="categoryName" required /></label>
+        <label>Short description<textarea name="categoryDescription" [(ngModel)]="categoryDescription" rows="3"></textarea></label>
+        <button class="quiet-button" type="submit">Create category</button>
+      </form>
+      <div class="category-list">
+        @for (category of categories(); track category.id) {
+          <div><span>{{ category.name }}</span><small>{{ category.productCount }} items</small></div>
+        }
+      </div>
+    </section>
+  </div>
+
+  <section class="panel catalog-table">
+    <div class="panel-title"><div><p class="eyebrow">INVENTORY</p><h2>Products</h2></div><span class="count-pill">{{ products().length }} active</span></div>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Availability</th><th></th></tr></thead>
+      <tbody>
+        @for (product of products(); track product.id) {
+          <tr>
+            <td><strong>{{ product.name }}</strong><small>{{ product.brand || '—' }}</small></td>
+            <td>{{ product.categoryName }}</td>
+            <td>{{ product.effectivePrice | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td><span [class.low-stock]="product.stock <= product.minimumStock">{{ product.stock }}</span></td>
+            <td><span class="status-dot" [class.out]="product.stock < 1">{{ product.stock < 1 ? 'Sold out' : 'Active' }}</span></td>
+            <td class="row-actions"><button type="button" (click)="edit(product)">Edit</button><button type="button" (click)="archive(product)">Archive</button></td>
+          </tr>
+        } @empty { <tr><td colspan="6" class="empty-row">No active products yet.</td></tr> }
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="panel orders-panel">
+    <div class="panel-title"><div><p class="eyebrow">FULFILMENT</p><h2>Recent orders</h2></div><span class="count-pill">{{ orders().length }} orders</span></div>
+    <div class="orders-list">
+      @for (order of orders().slice(0, 8); track order.id) {
+        <article class="order-row">
+          <div><strong>Order #{{ order.id }}</strong><small>{{ order.shippingName }} · {{ order.createdAtUtc | date:'mediumDate' }}</small></div>
+          <span class="order-total">{{ order.totalAmount | currency:'USD':'symbol':'1.2-2' }}</span>
+          <select [name]="'status-' + order.id" [ngModel]="order.status" (ngModelChange)="changeOrderStatus(order, $event)">
+            @for (status of statuses; track status) { <option [ngValue]="status">{{ status }}</option> }
+          </select>
+        </article>
+      } @empty { <p class="empty-row">Orders will show here after the first checkout.</p> }
+    </div>
+  </section>
+</section>

@@ -1,0 +1,173 @@
+<div class="announcement">A little more considered. Complimentary shipping on orders over $100.</div>
+
+<header class="site-header">
+  <a class="wordmark" href="#top" aria-label="Atelier home" (click)="manageMode.set(false)">
+    <span class="brand-mark">a</span><span>atelier<span class="brand-dot">.</span><small>GOODS FOR EVERY DAY</small></span>
+  </a>
+  <nav class="main-nav" aria-label="Main navigation">
+    <a href="#collection" (click)="manageMode.set(false)">Shop all</a>
+    <a href="#story" (click)="manageMode.set(false)">Our approach</a>
+    @if (isManager()) { <button class="nav-manage" type="button" (click)="toggleManageMode()">{{ manageMode() ? 'Storefront' : 'Manage store' }}</button> }
+  </nav>
+  <div class="header-actions">
+    <button class="icon-button account-button" type="button" (click)="openAccount()"><span class="person-icon">♙</span><span class="action-label">{{ session() ? 'Account' : 'Sign in' }}</span></button>
+    <button class="bag-button" type="button" (click)="cartOpen.set(true)"><span>Bag</span><b>{{ cart.count() }}</b></button>
+  </div>
+</header>
+
+@if (manageMode() && isManager()) {
+  <app-admin-panel [products]="products()" [categories]="categories()" (refreshRequested)="loadCatalog()" (notice)="announce($event)" />
+} @else {
+  <main id="top">
+    <section class="hero-wrap">
+      <div class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> A more thoughtful kind of shop</p>
+          <h1>Good things,<br /><em>made to last.</em></h1>
+          <p class="hero-description">Useful, beautiful pieces for the everyday. Chosen with care, made to be kept.</p>
+          <a class="hero-link" href="#collection">Explore the collection <span>↗</span></a>
+          <div class="hero-note"><span class="hero-stars">★★★★★</span><span>Small details. Better days.</span></div>
+        </div>
+        <div class="hero-art" role="img" aria-label="A warm, carefully arranged home interior">
+          <div class="art-sun"></div>
+          <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1400&q=90" alt="Sunlit neutral living room" />
+          <div class="art-caption"><span>01 / 04</span><span>Objects for a slower home</span></div>
+          <div class="art-stamp">LESS,<br />BUT BETTER</div>
+        </div>
+        <div class="hero-side-note">CURATED WITH INTENTION&nbsp; · &nbsp;MADE FOR REAL LIFE</div>
+      </div>
+    </section>
+
+    <section class="promise-row" aria-label="Store commitments">
+      <div><span class="promise-icon">✳</span><span><strong>Considered quality</strong><small>Things you’ll reach for often</small></span></div>
+      <div><span class="promise-icon">⌁</span><span><strong>Easy, thoughtful delivery</strong><small>Free shipping over $100</small></span></div>
+      <div><span class="promise-icon">◌</span><span><strong>Here to help</strong><small>A real person, when you need one</small></span></div>
+    </section>
+
+    <section id="collection" class="collection-section">
+      <div class="section-heading">
+        <div><p class="eyebrow">THE EVERYDAY EDIT</p><h2>Find your next <em>favorite.</em></h2></div>
+        <p class="section-intro">A small collection of useful things,<br />picked to earn their place at home.</p>
+      </div>
+
+      <div class="category-row" aria-label="Filter by category">
+        <button type="button" [class.active]="selectedCategory() === null" (click)="selectedCategory.set(null)">Everything <span>{{ products().length }}</span></button>
+        @for (category of categories(); track category.id) {
+          <button type="button" [class.active]="selectedCategory() === category.id" (click)="selectedCategory.set(category.id)">{{ category.name }} <span>{{ category.productCount }}</span></button>
+        }
+      </div>
+
+      <div class="toolbar">
+        <label class="search-box"><span aria-hidden="true">⌕</span><input aria-label="Search products" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Search the collection" /></label>
+        <div class="filter-actions">
+          <select aria-label="Filter by maximum price" [ngModel]="maxPrice()" (ngModelChange)="maxPrice.set($event ? +$event : null)">
+            <option [ngValue]="null">Any price</option><option [ngValue]="100">Under $100</option><option [ngValue]="150">Under $150</option><option [ngValue]="250">Under $250</option>
+          </select>
+          <label class="sort-label">Sort by <select aria-label="Sort products" [ngModel]="sort()" (ngModelChange)="sort.set($event)">
+            <option value="featured">Featured</option><option value="newest">New arrivals</option><option value="rating">Top rated</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option>
+          </select></label>
+        </div>
+      </div>
+
+      @if (catalogError()) { <div class="catalog-message"><span>We’re having a little trouble.</span><p>{{ catalogError() }}</p><button type="button" (click)="loadCatalog()">Try again</button></div> }
+      @if (loading()) { <div class="loading-row"><span></span><span></span><span></span><span></span></div> }
+      @if (!loading() && visibleProducts().length) {
+        <div class="product-grid">
+          @for (product of visibleProducts(); track product.id) {
+            <app-product-card [product]="product" (add)="addToCart($event)" (reviews)="openReviews($event)" />
+          }
+        </div>
+      }
+      @if (!loading() && !catalogError() && !visibleProducts().length) {
+        <div class="empty-catalog"><span>⌕</span><h3>No pieces found</h3><p>Try another search or browse everything in the collection.</p><button type="button" (click)="search.set(''); selectedCategory.set(null); maxPrice.set(null)">Clear filters</button></div>
+      }
+    </section>
+
+    <section id="story" class="story-banner">
+      <div class="story-image"><img src="https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&w=1200&q=85" alt="Natural materials and objects thoughtfully arranged" loading="lazy" /></div>
+      <div class="story-copy"><p class="eyebrow">A NOTE ON WHAT WE SELL</p><h2>Less noise.<br /><em>More meaning.</em></h2><p>We believe the things around us should make daily life feel a little more considered. Every piece in our edit has a purpose, a point of view, and room to become part of your story.</p><a href="#collection">Meet the collection <span>↗</span></a></div>
+    </section>
+  </main>
+}
+
+<footer class="site-footer"><a class="wordmark footer-wordmark" href="#top"><span class="brand-mark">a</span><span>atelier<span class="brand-dot">.</span><small>GOODS FOR EVERY DAY</small></span></a><p>Thoughtful goods for the way we live.</p><span>© 2026 Atelier Goods</span></footer>
+
+@if (cartOpen()) {
+  <div class="drawer-shade" (click)="cartOpen.set(false)"></div>
+  <aside class="side-drawer" role="dialog" aria-modal="true" aria-label="Your shopping bag">
+    <div class="drawer-heading"><div><p class="eyebrow">YOUR SELECTION</p><h2>Your bag <span>({{ cart.count() }})</span></h2></div><button class="close-button" type="button" aria-label="Close bag" (click)="cartOpen.set(false)">×</button></div>
+    @if (!cart.lines().length) {
+      <div class="empty-bag"><span>◌</span><h3>Your bag is taking a breath.</h3><p>Find something useful and lovely to bring home.</p><button type="button" (click)="cartOpen.set(false)">Browse the collection</button></div>
+    } @else {
+      <div class="cart-lines">
+        @for (line of cart.lines(); track line.product.id) {
+          <article class="cart-line">
+            <div class="cart-thumb">@if (line.product.images[0]) { <img [src]="line.product.images[0]" [alt]="line.product.name" /> }</div>
+            <div class="cart-line-copy"><span>{{ line.product.brand || line.product.categoryName }}</span><strong>{{ line.product.name }}</strong><div class="quantity-control"><button type="button" aria-label="Decrease quantity" (click)="updateQuantity(line.product.id, line.quantity - 1)">−</button><span>{{ line.quantity }}</span><button type="button" aria-label="Increase quantity" (click)="updateQuantity(line.product.id, line.quantity + 1)">＋</button><button class="remove-link" type="button" (click)="removeFromCart(line.product.id)">Remove</button></div></div>
+            <strong class="line-total">{{ line.product.effectivePrice * line.quantity | currency:'USD':'symbol':'1.2-2' }}</strong>
+          </article>
+        }
+      </div>
+      <div class="shipping-note">@if (delivery() === 'Express') { Express delivery is {{ estimatedShipping() | currency:'USD':'symbol':'1.2-2' }}. } @else if (estimatedShipping() === 0) { Complimentary standard shipping is on us. } @else { Add {{ checkoutSettings().freeShippingThreshold - cart.subtotal() | currency:'USD':'symbol':'1.0-0' }} for complimentary shipping. }</div>
+      <div class="cart-summary"><div><span>Subtotal</span><strong>{{ cart.subtotal() | currency:'USD':'symbol':'1.2-2' }}</strong></div><div><span>Shipping</span><strong>{{ estimatedShipping() === 0 ? 'Complimentary' : estimatedShipping() | currency:'USD':'symbol':'1.2-2' }}</strong></div><div><span>Estimated tax</span><strong>{{ estimatedTax() | currency:'USD':'symbol':'1.2-2' }}</strong></div><div class="total-row"><span>Total</span><strong>{{ estimatedTotal() | currency:'USD':'symbol':'1.2-2' }}</strong></div><p>Tax rate is configured by the store. Final total is confirmed when the order is placed.</p></div>
+      @if (session()) {
+        <form class="checkout-form" (ngSubmit)="startCheckout()">
+          <p class="eyebrow">DELIVERY DETAILS</p>
+          <div class="checkout-row"><label>Full name<input name="shippingName" [(ngModel)]="checkout.shippingName" required /></label><label>Email<input name="shippingEmail" type="email" [(ngModel)]="checkout.shippingEmail" required /></label></div>
+          <label>Street address<input name="shippingAddress" [(ngModel)]="checkout.shippingAddress" required /></label>
+          <div class="checkout-row"><label>City<input name="shippingCity" [(ngModel)]="checkout.shippingCity" required /></label><label>Postal code<input name="shippingPostalCode" [(ngModel)]="checkout.shippingPostalCode" /></label></div>
+          <label>Country<input name="shippingCountry" [(ngModel)]="checkout.shippingCountry" required /></label>
+          <div class="checkout-row"><label>Delivery<select name="deliveryMethod" [ngModel]="delivery()" (ngModelChange)="setDelivery($event)"><option value="Standard">Standard · 3–5 days</option><option value="Express">Express · 1–2 days</option></select></label><label>Payment<select name="paymentMethod" [(ngModel)]="checkout.paymentMethod"><option>Cash on delivery</option></select></label></div>
+          <button class="checkout-button" type="submit" [disabled]="checkoutBusy()">{{ checkoutBusy() ? 'Placing order…' : 'Place order' }} <span>→</span></button>
+        </form>
+      } @else {
+        <button class="checkout-button" type="button" (click)="startCheckout()">Sign in to checkout <span>→</span></button>
+        <p class="guest-note">Your bag will be here when you return.</p>
+      }
+    }
+  </aside>
+}
+
+@if (authOpen()) {
+  <div class="modal-shade" (click)="authOpen.set(false)">
+    <section class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title" (click)="$event.stopPropagation()">
+      <button class="close-button modal-close" type="button" aria-label="Close sign in" (click)="authOpen.set(false)">×</button>
+      <p class="eyebrow">WELCOME TO ATELIER</p><h2 id="auth-title">{{ authMode() === 'login' ? 'Good to see you.' : 'Make room for good things.' }}</h2><p class="modal-intro">{{ authMode() === 'login' ? 'Sign in to check out and see your orders.' : 'Create an account for a smoother, more personal shop.' }}</p>
+      <form (ngSubmit)="submitAuth()">
+        @if (authMode() === 'register') { <label>Your name<input name="authName" [(ngModel)]="authName" autocomplete="name" required /></label> }
+        <label>Email address<input name="authEmail" type="email" [(ngModel)]="authEmail" autocomplete="email" required /></label>
+        <label>Password<input name="authPassword" type="password" [(ngModel)]="authPassword" [autocomplete]="authMode() === 'login' ? 'current-password' : 'new-password'" required /></label>
+        @if (authError) { <p class="form-error">{{ authError }}</p> }
+        <button class="checkout-button" type="submit" [disabled]="authBusy">{{ authBusy ? 'One moment…' : authMode() === 'login' ? 'Sign in' : 'Create account' }} <span>→</span></button>
+      </form>
+      <p class="modal-switch">{{ authMode() === 'login' ? 'New to Atelier?' : 'Already have an account?' }} <button type="button" (click)="openAuth(authMode() === 'login' ? 'register' : 'login')">{{ authMode() === 'login' ? 'Create an account' : 'Sign in' }}</button></p>
+    </section>
+  </div>
+}
+
+@if (accountOpen() && session()) {
+  <div class="modal-shade" (click)="accountOpen.set(false)">
+    <section class="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title" (click)="$event.stopPropagation()">
+      <button class="close-button modal-close" type="button" aria-label="Close account" (click)="accountOpen.set(false)">×</button>
+      <p class="eyebrow">YOUR ATELIER</p><h2 id="account-title">A little space of your own.</h2>
+      <form class="profile-form" (ngSubmit)="saveProfile()"><label>Name<input name="profileName" [(ngModel)]="profileName" required /></label><label>Email<input name="profileEmail" type="email" [(ngModel)]="profileEmail" required /></label><button class="quiet-action" type="submit">Save profile</button></form>
+      <div class="history-heading"><h3>Order history</h3><span>{{ orderHistory().length }} orders</span></div>
+      <div class="history-list">@for (order of orderHistory(); track order.id) { <article><div><strong>Order #{{ order.id }}</strong><small>{{ order.createdAtUtc | date:'mediumDate' }} · {{ order.status }}</small></div><strong>{{ order.totalAmount | currency:'USD':'symbol':'1.2-2' }}</strong></article> } @empty { <p>Your orders will find their way here.</p> }</div>
+      @if (isManager()) { <button class="manager-link" type="button" (click)="accountOpen.set(false); toggleManageMode()">Open store management →</button> }
+      <button class="signout-button" type="button" (click)="signOut()">Sign out</button>
+    </section>
+  </div>
+}
+
+@if (reviewProduct(); as product) {
+  <div class="modal-shade" (click)="reviewProduct.set(null)">
+    <section class="reviews-modal" role="dialog" aria-modal="true" aria-labelledby="reviews-title" (click)="$event.stopPropagation()">
+      <button class="close-button modal-close" type="button" aria-label="Close reviews" (click)="reviewProduct.set(null)">×</button>
+      <p class="eyebrow">CUSTOMER NOTES</p><h2 id="reviews-title">{{ product.name }}</h2>
+      <div class="review-list">@for (review of reviews(); track review.id) { <article><div class="review-author"><strong>{{ review.displayName }}</strong><span>{{ '★'.repeat(review.rating) }}</span></div><small>{{ review.createdAtUtc | date:'mediumDate' }}</small><p>{{ review.comment || 'A lovely find.' }}</p></article> } @empty { <p class="review-empty">No reviews yet. Be the first to share how it fits into your day.</p> }</div>
+      <form class="review-form" (ngSubmit)="submitReview()"><label>Your rating<select [ngModel]="reviewRating()" (ngModelChange)="reviewRating.set(+$event)" name="reviewRating"><option [ngValue]="5">★★★★★ · Loved it</option><option [ngValue]="4">★★★★ · Really good</option><option [ngValue]="3">★★★ · Just right</option><option [ngValue]="2">★★ · Could be better</option><option [ngValue]="1">★ · Not for me</option></select></label><label>Your note<textarea name="reviewComment" [ngModel]="reviewComment()" (ngModelChange)="reviewComment.set($event)" maxlength="2000" rows="3" placeholder="What should someone know? (optional)"></textarea></label><button class="checkout-button" type="submit" [disabled]="reviewBusy()">{{ reviewBusy() ? 'Saving…' : 'Share your review' }} <span>→</span></button></form>
+    </section>
+  </div>
+}
+
+@if (notice()) { <div class="toast" role="status">{{ notice() }}</div> }
